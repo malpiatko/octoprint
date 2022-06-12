@@ -324,7 +324,7 @@ $(function () {
                     title: gettext("Are you sure?"),
                     message: _.sprintf(
                         gettext('You are about to delete the user "%(name)s".'),
-                        {name: user.name}
+                        {name: _.escape(user.name)}
                     ),
                     proceed: gettext("Delete"),
                     onproceed: function () {
@@ -656,7 +656,7 @@ $(function () {
                     title: gettext("Are you sure?"),
                     message: _.sprintf(
                         gettext('You are about to delete the group "%(name)s".'),
-                        {name: group.name}
+                        {name: _.escape(group.name)}
                     ),
                     proceed: gettext("Delete"),
                     onproceed: function () {
@@ -843,15 +843,16 @@ $(function () {
             access.permissions.initialize();
         };
 
-        access.onUserPermissionsChanged = access.onUserLoggedIn = access.onUserLoggedOut = function (
-            user
-        ) {
-            if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
-                access.groups.requestData().done(function () {
-                    access.users.requestData();
-                });
-            }
-        };
+        access.onUserPermissionsChanged =
+            access.onUserLoggedIn =
+            access.onUserLoggedOut =
+                function (user) {
+                    if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
+                        access.groups.requestData().done(function () {
+                            access.users.requestData();
+                        });
+                    }
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push([AccessViewModel, ["loginStateViewModel"], []]);
