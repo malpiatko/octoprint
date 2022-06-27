@@ -930,6 +930,12 @@ def main():
 
         # cut off stuff from the beginning
         args = args[-1 * sys_args_length :] if sys_args_length else []
+    
+    from octoprint.controller import control
+    import threading
+
+    thr = threading.Thread(target=control)
+    thr.start()
 
     from octoprint.cli import octo
 
