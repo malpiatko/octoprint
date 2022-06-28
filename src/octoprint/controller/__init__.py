@@ -372,6 +372,18 @@ def moveMouse():
         posY = int(touchSensor.touchLocation(0) * screenHeight)
         posX = int(touchSensor.touchHorizontalLocation(0) * screenWidth)   
         print(posX, posY)
+        jog(posX,posY, 0)
         #pyautogui.moveTo(posX, posY) # direct mapping
         #pyautogui.moveTo(posX, screenHeight - posY) # reverse Y movement
         #pyautogui.moveTo(screenWidth - posX, screenHeight - posY) # reverse X & Y movement
+
+import requests
+
+def jog(x, y, z): 
+    req = requests.post('http://localhost:5000/api/printer/printhead', json={'command': 'jog', 'x':x-100, 'y':y-100, 'z':z, 'absolute':True}, 
+    headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
+    print(req.text)
+
+
+    
+
