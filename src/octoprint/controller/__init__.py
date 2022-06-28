@@ -347,17 +347,21 @@ class TrillLib:
 # _____________________________________________________________________________________________________
 
 lastTouched = time.time() 
+screenWidth, screenHeight = 200, 200
+
 
 def control():
-    global touchSensor, screenWidth, screenHeight
+    global touchSensor1
     print(" Simple Trill to Mouse. Ctrl C to quit")
-    touchSensor = TrillLib(1, "square", 0x28)
-    touchSensor.setPrescaler(3)
-    screenWidth, screenHeight = 200, 200
-    print("screen size", screenWidth, screenHeight)
+    touchSensor1 = TrillLib(1, 'square', 0x28)
+    touchSensor1.setPrescaler(3)
+
+    touchSensor2 = TrillLib(1, 'bar', 0x26)
+    touchSensor2.setPrescaler(3)
 
     while(1):
-        moveMouse()
+        moveMouse(touchSensor1)
+        moveMouse(touchSensor2)
         time.sleep(0.05)
 
 def moveMouse():
@@ -373,17 +377,19 @@ def moveMouse():
         posX = int(touchSensor.touchHorizontalLocation(0) * screenWidth)   
         print(posX, posY)
         jog(posX,posY, 0)
-        #pyautogui.moveTo(posX, posY) # direct mapping
-        #pyautogui.moveTo(posX, screenHeight - posY) # reverse Y movement
-        #pyautogui.moveTo(screenWidth - posX, screenHeight - posY) # reverse X & Y movement
+
 
 import requests
 
 def jog(x, y, z): 
-    req = requests.post('http://localhost:5000/api/printer/printhead', json={'command': 'jog', 'x':x-100, 'y':y-100, 'z':z, 'absolute':True}, 
+    print(x-100, y-100, z)
+    req = requests.post('http://localhost:5000/api/printer/printhead', json={
+        'command': 'jog', 
+        'x':x-100, 
+        'y':y-100, 
+        'z':0, 
+        'absolute':True,
+        'speed': False,
+        },
     headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
-    print(req.text)
-
-
-    
-
+    print(x.text)
