@@ -354,42 +354,54 @@ def control():
     global touchSensor1
     print(" Simple Trill to Mouse. Ctrl C to quit")
     touchSensor1 = TrillLib(1, 'square', 0x28)
+    touchSensor1.printDetails()
     touchSensor1.setPrescaler(3)
 
-    touchSensor2 = TrillLib(1, 'bar', 0x26)
+    touchSensor2 = TrillLib(1, 'bar', 0x20)
+    touchSensor2.printDetails()
     touchSensor2.setPrescaler(3)
 
     while(1):
-        moveMouse(touchSensor1)
-        moveMouse(touchSensor2)
+        moveMouse(touchSensor1, jogXY)
+        moveMouse(touchSensor2, jogZ)
         time.sleep(0.05)
 
-def moveMouse():
-    global lastYmove, lastXmove, lastTouched
-    touchSensor.readTrill()
-    if touchSensor.getNumTouches() > 1 or touchSensor.getNumHorizontalTouches() > 1:
-        while touchSensor.getNumTouches() != 0 and touchSensor.getNumHorizontalTouches() != 0 :
-            touchSensor.readTrill()
-            time.sleep(0.2)
-        return    
-    if touchSensor.getNumTouches() !=0 and touchSensor.getNumHorizontalTouches() != 0: # only move when touched       
-        posY = int(touchSensor.touchLocation(0) * screenHeight)
-        posX = int(touchSensor.touchHorizontalLocation(0) * screenWidth)   
-        print(posX, posY)
-        jog(posX,posY, 0)
+def moveMouse(sensor, jog):
+    sensor.readTrill()
+    if sensor.getNumTouches() !=0 or sensor.getNumHorizontalTouches() != 0: # only move when touched   
+        if sensor.is1D():
+            posZ = int(sensor.touchLocation(0) * screenHeight)
+            posZ1 = int(sensor.touchLocation(0) * screenHeight)
+            jog(posZ)
+            print(posZ, posZ1)
+        else:
+            posY = int(sensor.touchLocation(0) * screenHeight) - screenHeight/2 # origin at centre
+            posX = int(sensor.touchHorizontalLocation(0) * screenWidth) - screenHeight/2
+            print(posX, posY)
+            jog(posX,posY)
 
 
 import requests
 
-def jog(x, y, z): 
-    print(x-100, y-100, z)
+def jogXY(x, y): 
+    print(x, y)
     req = requests.post('http://localhost:5000/api/printer/printhead', json={
         'command': 'jog', 
-        'x':x-100, 
-        'y':y-100, 
-        'z':0, 
+        'x':x, 
+        'y':y, 
         'absolute':True,
         'speed': False,
         },
     headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
-    print(x.text)
+    print(req.text)
+
+def jogZ(z): 
+    print(z)
+    req = requests.post('http://localhost:5000/api/printer/printhead', json={
+        'command': 'jog', 
+        'z':z,
+        'absolute':True,
+        'speed': False,
+        },
+    headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
+    print(req.text)
