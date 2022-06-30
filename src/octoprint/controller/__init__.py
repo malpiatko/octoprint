@@ -12,6 +12,7 @@
 def hello():
     print("hello")
 
+from pyparsing import pythonStyleComment
 from smbus2 import SMBus, i2c_msg 
 import time
 
@@ -348,10 +349,12 @@ class TrillLib:
 
 lastTouched = time.time() 
 screenWidth, screenHeight = 200, 200
+lastX, lastY, lastZ = 0, 0, 0
+posX, posY, posZ = 0,0,200
+extrude = False
 
 
 def control():
-    global touchSensor1
     print(" Simple Trill to Mouse. Ctrl C to quit")
     touchSensor1 = TrillLib(1, 'square', 0x28)
     touchSensor1.printDetails()
@@ -360,48 +363,49 @@ def control():
     touchSensor2 = TrillLib(1, 'bar', 0x20)
     touchSensor2.printDetails()
     touchSensor2.setPrescaler(3)
-
     while(1):
-        moveMouse(touchSensor1, jogXY)
-        moveMouse(touchSensor2, jogZ)
+        moveMouse(touchSensor1)
+        moveMouse(touchSensor2)
         time.sleep(0.05)
 
-def moveMouse(sensor, jog):
+def moveMouse(sensor):
+    global lastX, lastY, lastZ, posX, posY, posZ, extrude
     sensor.readTrill()
     if sensor.getNumTouches() !=0 or sensor.getNumHorizontalTouches() != 0: # only move when touched   
         if sensor.is1D():
+            lastZ = posZ
             posZ = int(sensor.touchLocation(0) * screenHeight)
-            posZ1 = int(sensor.touchLocation(0) * screenHeight)
-            jog(posZ)
-            print(posZ, posZ1)
         else:
+            lastX = posX
+            lastY = posY
             posY = int(sensor.touchLocation(0) * screenHeight) - screenHeight/2 # origin at centre
             posX = int(sensor.touchHorizontalLocation(0) * screenWidth) - screenHeight/2
             print(posX, posY)
-            jog(posX,posY)
-
+        jogExtrudeCommand(posX, posY, posZ)
+       
 
 import requests
 
-def jogXY(x, y): 
+def jogCommand(x, y, z):
     print(x, y)
-    req = requests.post('http://localhost:5000/api/printer/printhead', json={
-        'command': 'jog', 
+    req = requests.post('http://localhost:5000/api/printer/printhead', json={'command': 'jog', 
         'x':x, 
         'y':y, 
+        'z':z,
         'absolute':True,
-        'speed': False,
+        'speed': 8000,
         },
     headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
     print(req.text)
 
-def jogZ(z): 
-    print(z)
-    req = requests.post('http://localhost:5000/api/printer/printhead', json={
-        'command': 'jog', 
-        'z':z,
-        'absolute':True,
-        'speed': False,
-        },
-    headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
+import math
+
+def jogExtrudeCommand(x, y, z):
+    global lastX, lastY, lastZ
+    print(lastX, lastY, lastZ)
+    e = math.dist([lastX,lastY,lastZ], [x,y,z])
+    cmds = ['M83', 'G90', 'G1 X{} Y{} Z{} E{} F1000'.format(x,y,z,e)]
+    req = requests.post('http://localhost:5000/api/printer/command', json={
+        'commands': cmds}, headers={'X-Api-Key':'10E589980C3D413B8029AE8BED62A526'})
     print(req.text)
+
